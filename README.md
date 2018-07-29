@@ -40,23 +40,58 @@ ggjaObj := ggja.Obj{
 But this is only done once and—also useful—you can pass the error handling
 strategy around with the `ggjaObj`.
 
+For more details read on or consult
+[godoc](https://godoc.org/github.com/fractalqb/ggja).
+
 # JSON Object Member by `string` or `fmt.Stringer`
 
 **TODO:** Access methods ending with 's', e.g. `.Bools` accept a `fmt.Stringer`
 as member name. This might be useful with consts that have a `Stringer`.
 
+# JSON Array Element by Index
+
+Simply by index (that's it for now):
+
+```go
+strVal := ggjaArr.Str(3, strVal)
+```
+
+Updates strVal in case ggjaArr has at least four elements. 
+
 # Access Methods for Basic Types
 
 Access methods for basic types come in two flavours:
 
-1. A conditional one, that returns a default value `nvl` if the requested value
+1. A _conditional_ one, that returns a default value `nvl` if the requested value
    is not in the JSON object or array. Those methods are simply called after
    type they return, e.g. `ggjaObj.Str("name", "-")` returns a string.
 
-2. A mandatory flavour that calls your provided `OnError` function if the
+2. A _mandatory_ flavour that calls your provided `OnError` function if the
    requested value is not preset. If you provide no error function it will
    `panic` instead.
 
 # Access Methods for Array and Objects
 
-**TODO**
+Besides the access methods for basic types there are also access methods for
+objects and arrays. Both come in the two flavours _conditional_ and _mandatory_.
+The _conditional_ access for arrays and objects does not have a default value
+but returns `nil` in case the is nothing that can be accessed.
+
+However array element and object member access have a third _generating_
+flavour that creates an empty array resp. object on access if needed.
+
+```go
+ggjaArr := Arr{OnError: fail}
+objMbr3 := ggjaArr.CObj(3)
+objMbr3.Put("name", "John Doe")
+jStr, _ := json.Marshal(ggjaArr.Bare)
+fmt.Println(string(jStr))
+jStr, _ = json.Marshal(objMbr3.Bare)
+fmt.Println(string(jStr))
+```
+writes output
+
+```
+[null,null,null,{"name":"John Doe"}]
+{"name":"John Doe"}
+```
