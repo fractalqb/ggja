@@ -63,22 +63,23 @@ Updates strVal in case ggjaArr has at least four elements.
 Access methods for basic types come in two flavours:
 
 1. A _conditional_ one, that returns a default value `nvl` if the requested value
-   is not in the JSON object or array. Those methods are simply called after
+   is not in the JSON object or array. Those methods are simply called after the
    type they return, e.g. `ggjaObj.Str("name", "-")` returns a string.
 
 2. A _mandatory_ flavour that calls your provided `OnError` function if the
    requested value is not preset. If you provide no error function it will
-   `panic` instead.
+   `panic` instead. Mandatory access methods start with 'M', e.g. `MInt(…)`
 
 # Access Methods for Array and Objects
 
 Besides the access methods for basic types there are also access methods for
 objects and arrays. Both come in the two flavours _conditional_ and _mandatory_.
 The _conditional_ access for arrays and objects does not have a default value
-but returns `nil` in case the is nothing that can be accessed.
+but returns `nil` in case the is nothing that can be accessed. 
 
 However array element and object member access have a third _generating_
-flavour that creates an empty array resp. object on access if needed.
+flavour that creates an empty array resp. object on access if needed. Generating
+access methods start with 'C' for _create_, e.g. `CObj(…)`.
 
 ```go
 ggjaArr := Arr{OnError: fail}
