@@ -218,6 +218,51 @@ func (o *Obj) MF64s(s fmt.Stringer) float64 {
 	return o.MF64(s.String())
 }
 
+func (o *Obj) F32(key string, nvl float32) float32 {
+	if tmp, ok := o.Bare[key]; ok {
+		if res, ok := tmp.(float64); ok {
+			if f32Range(res) {
+				return float32(res)
+			} else {
+				o.fail(fmt.Errorf("object member '%s' out of float32 range: %f",
+					key, res))
+				return 0
+			}
+		} else {
+			o.fail(fmt.Errorf("object member '%s' is not float32: '%v'", key, tmp))
+			return nvl
+		}
+	} else {
+		return nvl
+	}
+}
+
+func (o *Obj) F32s(s fmt.Stringer, nvl float32) float32 {
+	return o.F32(s.String(), nvl)
+}
+
+func (o *Obj) MF32(key string) float32 {
+	if tmp, ok := o.Bare[key]; ok {
+		if res, ok := tmp.(float64); ok {
+			if f32Range(res) {
+				return float32(res)
+			} else {
+				o.fail(fmt.Errorf("object member '%s' out of float32 range: %f",
+					key, res))
+			}
+		} else {
+			o.fail(fmt.Errorf("object member '%s' is not float32: '%v'", key, tmp))
+		}
+	} else {
+		o.fail(fmt.Errorf("no float32 object member '%s'", key))
+	}
+	return 0
+}
+
+func (o *Obj) MF32s(s fmt.Stringer) float32 {
+	return o.MF32(s.String())
+}
+
 func (o *Obj) Int(key string, nvl int) int {
 	if tmp, ok := o.Bare[key]; ok {
 		if res, ok := tmp.(float64); ok {
@@ -261,6 +306,96 @@ func (o *Obj) MInt(key string) int {
 
 func (o *Obj) MInts(s fmt.Stringer) int {
 	return o.MInt(s.String())
+}
+
+func (o *Obj) Uint32(key string, nvl uint32) uint32 {
+	if tmp, ok := o.Bare[key]; ok {
+		if res, ok := tmp.(float64); ok {
+			if uint32Range(res) {
+				return uint32(res)
+			} else {
+				o.fail(fmt.Errorf("object member '%s' out of uint32 range: %f",
+					key, res))
+				return 0
+			}
+		} else {
+			o.fail(fmt.Errorf("object member '%s' is not uint32: '%v'", key, tmp))
+			return nvl
+		}
+	} else {
+		return nvl
+	}
+}
+
+func (o *Obj) Uint32s(s fmt.Stringer, nvl uint32) uint32 {
+	return o.Uint32(s.String(), nvl)
+}
+
+func (o *Obj) MUint32(key string) uint32 {
+	if tmp, ok := o.Bare[key]; ok {
+		if res, ok := tmp.(float64); ok {
+			if uint32Range(res) {
+				return uint32(res)
+			} else {
+				o.fail(fmt.Errorf("object member '%s' out of uint32 range: %f",
+					key, res))
+			}
+		} else {
+			o.fail(fmt.Errorf("object member '%s' is not uint32: '%v'", key, tmp))
+		}
+	} else {
+		o.fail(fmt.Errorf("no uint32 object member '%s'", key))
+	}
+	return 0
+}
+
+func (o *Obj) MUint32s(s fmt.Stringer) uint32 {
+	return o.MUint32(s.String())
+}
+
+func (o *Obj) Int64(key string, nvl int64) int64 {
+	if tmp, ok := o.Bare[key]; ok {
+		if res, ok := tmp.(float64); ok {
+			if int64Range(res) {
+				return int64(res)
+			} else {
+				o.fail(fmt.Errorf("object member '%s' out of int64 range: %f",
+					key, res))
+				return 0
+			}
+		} else {
+			o.fail(fmt.Errorf("object member '%s' is not int64: '%v'", key, tmp))
+			return nvl
+		}
+	} else {
+		return nvl
+	}
+}
+
+func (o *Obj) Int64s(s fmt.Stringer, nvl int64) int64 {
+	return o.Int64(s.String(), nvl)
+}
+
+func (o *Obj) MInt64(key string) int64 {
+	if tmp, ok := o.Bare[key]; ok {
+		if res, ok := tmp.(float64); ok {
+			if int64Range(res) {
+				return int64(res)
+			} else {
+				o.fail(fmt.Errorf("object member '%s' out of int64 range: %f",
+					key, res))
+			}
+		} else {
+			o.fail(fmt.Errorf("object member '%s' is not int64: '%v'", key, tmp))
+		}
+	} else {
+		o.fail(fmt.Errorf("no int64 object member '%s'", key))
+	}
+	return 0
+}
+
+func (o *Obj) MInt64s(s fmt.Stringer) int64 {
+	return o.MInt64(s.String())
 }
 
 func (o *Obj) Str(key, nvl string) string {
@@ -370,10 +505,19 @@ func (a *Arr) Put(idx int, v interface{}) *Arr {
 	return a
 }
 
+func (a *Arr) adjIdx(idx int) int {
+	if idx < 0 {
+		return len(a.Bare) + idx
+	}
+	return idx
+}
+
 func (a *Arr) Obj(idx int) *Obj {
 	if a == nil || idx >= len(a.Bare) {
 		return nil
-	} else if tmp := a.Bare[idx]; tmp == nil {
+	}
+	idx = a.adjIdx(idx)
+	if tmp := a.Bare[idx]; tmp == nil {
 		return nil
 	} else if obj, ok := tmp.(map[string]interface{}); ok {
 		return &Obj{Bare: obj, OnError: a.OnError}
@@ -385,6 +529,7 @@ func (a *Arr) Obj(idx int) *Obj {
 
 func (a *Arr) CObj(idx int) (elm *Obj) {
 	if elm = a.Obj(idx); elm == nil {
+		idx = a.adjIdx(idx)
 		obj := make(map[string]interface{})
 		a.Put(idx, obj)
 		elm = &Obj{Bare: obj, OnError: a.OnError}
@@ -396,7 +541,9 @@ func (a *Arr) MObj(idx int) *Obj {
 	if idx >= len(a.Bare) {
 		a.fail(fmt.Errorf("no JSON-object array element at %d", idx))
 		return nil
-	} else if tmp := a.Bare[idx]; tmp == nil {
+	}
+	idx = a.adjIdx(idx)
+	if tmp := a.Bare[idx]; tmp == nil {
 		a.fail(fmt.Errorf("no JSON-object array element at %d", idx))
 		return nil
 	} else if obj, ok := tmp.(map[string]interface{}); ok {
@@ -410,7 +557,9 @@ func (a *Arr) MObj(idx int) *Obj {
 func (a *Arr) Arr(idx int) *Arr {
 	if a == nil || idx >= len(a.Bare) {
 		return nil
-	} else if tmp := a.Bare[idx]; tmp == nil {
+	}
+	idx = a.adjIdx(idx)
+	if tmp := a.Bare[idx]; tmp == nil {
 		return nil
 	} else if arr, ok := tmp.([]interface{}); ok {
 		return &Arr{Bare: arr, OnError: a.OnError}
@@ -422,6 +571,7 @@ func (a *Arr) Arr(idx int) *Arr {
 
 func (a *Arr) CArr(idx int) (elm *Arr) {
 	if elm = a.Arr(idx); elm == nil {
+		idx = a.adjIdx(idx)
 		arr := make([]interface{}, 0)
 		a.Put(idx, arr)
 		elm = &Arr{Bare: arr, OnError: a.OnError}
@@ -433,7 +583,9 @@ func (a *Arr) MArr(idx int) *Arr {
 	if idx >= len(a.Bare) {
 		a.fail(fmt.Errorf("no JSON-array array element at %d", idx))
 		return nil
-	} else if tmp := a.Bare[idx]; tmp == nil {
+	}
+	idx = a.adjIdx(idx)
+	if tmp := a.Bare[idx]; tmp == nil {
 		a.fail(fmt.Errorf("no JSON-array array element at %d", idx))
 		return nil
 	} else if arr, ok := tmp.([]interface{}); ok {
@@ -447,7 +599,9 @@ func (a *Arr) MArr(idx int) *Arr {
 func (a *Arr) Bool(idx int, nvl bool) bool {
 	if idx >= len(a.Bare) {
 		return false
-	} else if tmp := a.Bare[idx]; tmp == nil {
+	}
+	idx = a.adjIdx(idx)
+	if tmp := a.Bare[idx]; tmp == nil {
 		return false
 	} else if res, ok := tmp.(bool); ok {
 		return res
@@ -461,7 +615,9 @@ func (a *Arr) MBool(idx int) bool {
 	if idx >= len(a.Bare) {
 		a.fail(fmt.Errorf("no boolean array element at %d", idx))
 		return false
-	} else if tmp := a.Bare[idx]; tmp == nil {
+	}
+	idx = a.adjIdx(idx)
+	if tmp := a.Bare[idx]; tmp == nil {
 		a.fail(fmt.Errorf("no boolean array element at %d", idx))
 		return false
 	} else if res, ok := tmp.(bool); ok {
@@ -475,7 +631,9 @@ func (a *Arr) MBool(idx int) bool {
 func (a *Arr) F64(idx int, nvl float64) float64 {
 	if idx >= len(a.Bare) {
 		return 0
-	} else if tmp := a.Bare[idx]; tmp == nil {
+	}
+	idx = a.adjIdx(idx)
+	if tmp := a.Bare[idx]; tmp == nil {
 		return 0
 	} else if res, ok := tmp.(float64); ok {
 		return res
@@ -489,7 +647,9 @@ func (a *Arr) MF64(idx int) float64 {
 	if idx >= len(a.Bare) {
 		a.fail(fmt.Errorf("no float64 array element at %d", idx))
 		return 0
-	} else if tmp := a.Bare[idx]; tmp == nil {
+	}
+	idx = a.adjIdx(idx)
+	if tmp := a.Bare[idx]; tmp == nil {
 		a.fail(fmt.Errorf("no float64 array element at %d", idx))
 		return 0
 	} else if res, ok := tmp.(float64); ok {
@@ -503,7 +663,9 @@ func (a *Arr) MF64(idx int) float64 {
 func (a *Arr) Int(idx int, nvl int) int {
 	if idx >= len(a.Bare) {
 		return 0
-	} else if tmp := a.Bare[idx]; tmp == nil {
+	}
+	idx = a.adjIdx(idx)
+	if tmp := a.Bare[idx]; tmp == nil {
 		return 0
 	} else if res, ok := tmp.(float64); ok {
 		if intRange(res) {
@@ -523,7 +685,9 @@ func (a *Arr) MInt(idx int) int {
 	if idx >= len(a.Bare) {
 		a.fail(fmt.Errorf("no int array element at %d", idx))
 		return 0
-	} else if tmp := a.Bare[idx]; tmp == nil {
+	}
+	idx = a.adjIdx(idx)
+	if tmp := a.Bare[idx]; tmp == nil {
 		a.fail(fmt.Errorf("no int array element at %d", idx))
 		return 0
 	} else if res, ok := tmp.(float64); ok {
@@ -543,7 +707,9 @@ func (a *Arr) MInt(idx int) int {
 func (a *Arr) Str(idx int, nvl string) string {
 	if idx >= len(a.Bare) {
 		return ""
-	} else if tmp := a.Bare[idx]; tmp == nil {
+	}
+	idx = a.adjIdx(idx)
+	if tmp := a.Bare[idx]; tmp == nil {
 		return ""
 	} else if res, ok := tmp.(string); ok {
 		return res
@@ -557,7 +723,9 @@ func (a *Arr) MStr(idx int) string {
 	if idx >= len(a.Bare) {
 		a.fail(fmt.Errorf("no string array element at %d", idx))
 		return ""
-	} else if tmp := a.Bare[idx]; tmp == nil {
+	}
+	idx = a.adjIdx(idx)
+	if tmp := a.Bare[idx]; tmp == nil {
 		a.fail(fmt.Errorf("no string array element at %d", idx))
 		return ""
 	} else if res, ok := tmp.(string); ok {
@@ -585,6 +753,21 @@ int8   : -128 to 127
 int16  : -32768 to 32767
 int64  : -9223372036854775808 to 9223372036854775807
 */
+
+// TODO int is machine dependent!!!
 func intRange(x float64) bool {
-	return -2147483648 < x && x < 2147483647
+	return -2147483648 <= x && x <= 2147483647
+}
+
+func uint32Range(x float64) bool {
+	return 0 <= x && x <= 4294967295
+}
+
+func int64Range(x float64) bool {
+	return -9223372036854775808 <= x && x <= 9223372036854775807
+}
+
+// TODO
+func f32Range(x float64) bool {
+	return true
 }

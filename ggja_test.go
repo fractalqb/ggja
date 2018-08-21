@@ -85,3 +85,16 @@ func ExampleObj_Sets() {
 	// ERROR: no boolean object member 'baz'
 	// false
 }
+
+func ExampleArr_CObj() {
+	ggjaArr := Arr{OnError: fail}
+	objMbr3 := ggjaArr.CObj(3)
+	objMbr3.Put("name", "John Doe")
+	jStr, _ := json.Marshal(ggjaArr.Bare)
+	fmt.Println(string(jStr))
+	jStr, _ = json.Marshal(objMbr3.Bare)
+	fmt.Println(string(jStr))
+	// Output:
+	// [null,null,null,{"name":"John Doe"}]
+	// {"name":"John Doe"}
+}
