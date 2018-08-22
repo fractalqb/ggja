@@ -704,6 +704,50 @@ func (a *Arr) MInt(idx int) int {
 	}
 }
 
+func (a *Arr) Uint32(idx int, nvl uint32) uint32 {
+	if idx >= len(a.Bare) {
+		return 0
+	}
+	idx = a.adjIdx(idx)
+	if tmp := a.Bare[idx]; tmp == nil {
+		return 0
+	} else if res, ok := tmp.(float64); ok {
+		if uint32Range(res) {
+			return uint32(res)
+		} else {
+			a.fail(fmt.Errorf("array element %d out of uint32 range: %f",
+				idx, res))
+			return 0
+		}
+	} else {
+		a.fail(fmt.Errorf("array element %d is not uint32: '%v'", idx, tmp))
+		return 0
+	}
+}
+
+func (a *Arr) MUint32(idx int) uint32 {
+	if idx >= len(a.Bare) {
+		a.fail(fmt.Errorf("no uint32 array element at %d", idx))
+		return 0
+	}
+	idx = a.adjIdx(idx)
+	if tmp := a.Bare[idx]; tmp == nil {
+		a.fail(fmt.Errorf("no uint32 array element at %d", idx))
+		return 0
+	} else if res, ok := tmp.(float64); ok {
+		if uint32Range(res) {
+			return uint32(res)
+		} else {
+			a.fail(fmt.Errorf("array element %d out of uint32 range: %f",
+				idx, res))
+			return 0
+		}
+	} else {
+		a.fail(fmt.Errorf("array element %d is not uint32: '%v'", idx, tmp))
+		return 0
+	}
+}
+
 func (a *Arr) Str(idx int, nvl string) string {
 	if idx >= len(a.Bare) {
 		return ""
